@@ -119,7 +119,7 @@ for i in range(len(output)):
     output[i].update({'sample': samples[i]})
 
 
-csvfilename = 'kma_pointmutations.tsv'
+csvfilename = 'pointfinder_pointmutations.tsv'
 with open(csvfilename, 'w') as output_file:
     dict_writer = csv.DictWriter(output_file, keys, delimiter="\t")
     dict_writer.writeheader()

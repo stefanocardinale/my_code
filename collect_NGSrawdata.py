@@ -1,6 +1,7 @@
 import argparse
 import pymongo
 import subprocess as sp
+import json
 
 mongo_db_key = 'mongodb://localhost:27017/bifrost_prod'
 
@@ -14,10 +15,10 @@ def get_connection():
     connection = pymongo.MongoClient(mongo_db_key)
     return connection
 
-def get_samples_id(run_name):
+def get_samples_name(run_name):
     connection = get_connection()
 
-    DB = "bifrost_prod"
+    DB = "migration"
     db = connection[DB]
 
 
@@ -40,15 +41,17 @@ def get_samples_id(run_name):
 def get_sample(names):
     connection = get_connection()
     
-    DB = "bifrost_prod"
+    DB = "bifrost_upgrade_test"
     db = connection[DB]
 
-    sample = db.samples.find(
-        {'name': {'$in': names}},
-        {'reads': 1}
-    )
+    samples = list(db.samples.find(
+        {'name': {'$in': names}}
+    ))
 
-    return sample
+    if "_id" in samples:
+        samples["_id"] = samples["_id"].astype(str)
+    
+    return samples
 
 def extract_tsv(file):
     with open(file, "r") as tsv_file:
@@ -65,27 +68,13 @@ def extract_tsv(file):
     file_content = values
     return file_content
                     
-#sample_names = get_samples_id("samples")
-args = parse_args()
-file = args.i
+sample_names = get_samples_name("190417_NB551234_0125_N_WGS_217_AHH3GNAFXY")
 
-content = extract_tsv(file)
-names = []
-for i in range(len(content)):
-    names.append(content[i].get('sample', {}))
+samples = get_sample(sample_names)
+#samples = pd.DataFrame(samples)
+#samples = samples.to_dict("records")
+print(samples[0])
 
-print(names)
-samples =list(get_sample(names))
-print(samples)
+with open('./migration_samples.json', 'w') as fout:
+    json.dump(samples , fout)
 
-for i in range(len(samples)):
-    R1 = ''
-    R2 = ''
-    if 'reads' in samples[i]:
-        if 'R1' in samples[i]['reads']:
-                R1 = samples[i]['reads']['R1']
-        if 'R2' in samples[i]['reads']:
-                R2 = samples[i]['reads']['R2']
-    
-    sp.run(["cp", R1, "./files" ])
-    sp.run(["cp", R2, "./files" ])

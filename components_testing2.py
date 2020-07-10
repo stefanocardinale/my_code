@@ -1,19 +1,18 @@
-import components.import_data as import_data
-from components import html_components as hc
 import pymongo
-import components.mongo_interface as mongo_interface
 import os
 import re
 from bson.objectid import ObjectId
 KEY = "BIFROST_DB_KEY"
 import pandas as pd
 pd.set_option('display.max_columns', None)
+import json
 
-mongo_db_key = 'mongodb://stca:P4yAP6ue4YTy@s-sdi-calc2-p.ssi.ad:27017/bifrost_upgrade_test?authSource=admin'
+#mongo_db_key = 'mongodb://stca:P4yAP6ue4YTy@s-sdi-calc2-p.ssi.ad:27017/bifrost_upgrade_test?authSource=admin'
+mongo_db_key = 'mongodb://localhost:27017/bifrost_prod'
 
 def get_samples_id(species_source, run_name):
     connection = pymongo.MongoClient(mongo_db_key)
-    DB = "bifrost_prod"
+    DB = "bifrost_upgrade_test"
     db = connection[DB]
 
     if species_source == "provided":
@@ -43,7 +42,7 @@ def filter_all(species=None, species_source=None, group=None,
                pagination=None,
                projection=None):
     if sample_ids is None:
-        query_result = mongo_interface.filter(
+        query_result = filter(
             run_names=run_names, species=species,
             species_source=species_source, group=group,
             qc_list=qc_list,
@@ -68,7 +67,7 @@ def filter(run_names=None,
     else:
         spe_field = "properties.species_detection.summary.species"
     connection = pymongo.MongoClient(mongo_db_key)
-    DB = "bifrost_prod"
+    DB = "bifrost_upgrade_test"
     db = connection[DB]
 
     query = []
@@ -192,12 +191,22 @@ def get_mlst(sample_ids):
         "component.name": "ariba_mlst"
     },{'results.ariba_mlst/mlst_report_tsv.values': 1}))
 
-sample_ids = get_samples_id("not defined", '200226_NB551234_0217_N_WGS_314_AH2M3CAFX2')
+sample_ids = get_samples_id("not defined", '180718_NB551234_0049_N_WGS_140_AH7LFGAFXY')
 samples = filter_all(sample_ids=sample_ids)
-samples = pd.DataFrame(samples)
 
-#print(sample_ids)
+#if "_id" in samples:
+#    samples["_id"] = samples["_id"].astype(str)
+#samples['_id'] = samples['_id'].astype(str)
 
+samples = samples.to_dict("records")
+samples2 = pd.DataFrame(samples)
+print(samples2)
+#print(samples[0])
+
+#with open('./migration_samples.json', 'w') as fout:
+#    json.dump(samples , fout)
+
+samples2.to_csv("./migration_samples2.csv")
 # for col in samples.columns:
 #     print(col)
 
@@ -207,21 +216,21 @@ samples = pd.DataFrame(samples)
 #test = pd.DataFrame(run_name)
 #print(run)
 
-COLUMNS = ['name', 'sample_sheet.run_name']
+# COLUMNS = ['name', 'sample_sheet.run_name']
 
-table = samples.loc[samples['properties.detected_species'] == 'Yersinia enterocolitica'][COLUMNS]
-#print(table)
-#print(table['_id'][0])
-sample_ids_subset =  samples.loc[samples['properties.detected_species'] == 'Yersinia enterocolitica']['_id']
-#print(sample_ids_subset)
+# table = samples.loc[samples['properties.detected_species'] == 'Yersinia enterocolitica'][COLUMNS]
+# #print(table)
+# #print(table['_id'][0])
+# sample_ids_subset =  samples.loc[samples['properties.detected_species'] == 'Yersinia enterocolitica']['_id']
+# #print(sample_ids_subset)
 
-components = get_mlst(sample_ids_subset)
-print(components)
-values = [1]*len(components)
+# components = get_mlst(sample_ids_subset)
+# print(components)
+# values = [1]*len(components)
 
-for n in range(len(components)):
-    values[n] = components[n]['results']['ariba_mlst/mlst_report_tsv']['values'][0]['ST']
+# for n in range(len(components)):
+#     values[n] = components[n]['results']['ariba_mlst/mlst_report_tsv']['values'][0]['ST']
 
-table['ST'] = values
+# table['ST'] = values
 
-table.to_csv(r'/Users/stefanocardinale/Documents/SSI/PROJECTS/yersinia_200226.csv', index= False)
+# table.to_csv(r'/Users/stefanocardinale/Documents/SSI/PROJECTS/yersinia_200226.csv', index= False)
