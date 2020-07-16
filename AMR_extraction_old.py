@@ -4,10 +4,9 @@ import numpy as np
 from bson.objectid import ObjectId
 import os
 
-#mongo_db_key = 'mongodb://stca:P4yAP6ue4YTy@s-sdi-calc2-p.ssi.ad:27017/bifrost_upgrade_test?authSource=admin'
-mongo_db_key='mongodb://localhost:27017/bifrost_prod'
+mongo_db_key = 'mongodb://stca:P4yAP6ue4YTy@s-sdi-calc2-p.ssi.ad:27017/bifrost_upgrade_test?authSource=admin'
+os.chdir("/Users/stefanocardinale/Documents/")
 
-os.chdir("/Users/stefanocardinale/Documents/SSI/PROJECTS/AMR")
 template = pd.read_csv("resfinder_template.csv", sep=';')
 
 def get_run_list():
